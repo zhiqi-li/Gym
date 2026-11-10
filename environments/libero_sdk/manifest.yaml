@@ -1,0 +1,25 @@
+name: libero_sdk
+version: 0.1.0
+experimental: true
+kind: environment
+integration_profile: external-agent-loop
+domain: agent
+description: Five initial states of one LIBERO goal task through the EmberBridge SDK loop and native binary verification. This is a smoke workload, not the full LIBERO benchmark.
+modality: text, image
+licensing: unknown
+authors:
+  - NVIDIA NeMo Gym contributors
+reward:
+  range: [0.0, 1.0]
+  higher_is_better: true
+determinism: unknown
+resources_server: null
+agent_server: ember_bridge_agent
+model_server: policy_model
+prompt_source: agent
+datasets:
+  - name: example
+    type: example
+    jsonl_fpath: environments/libero_sdk/data/example.jsonl
+    num_repeats: 1
+lifecycle: active

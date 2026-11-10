@@ -1,0 +1,88 @@
+# Supply source, simulator, TTC and model settings in the ignored root env.yaml.
+config_paths:
+  - responses_api_models/openai_model/configs/openai_model.yaml
+
+policy_model:
+  responses_api_models:
+    openai_model:
+      upstream_max_num_tries: 1
+      upstream_request_timeout_seconds: 900
+      upstream_retry_policy:
+        max_attempts: 1
+      propagate_upstream_http_status_codes: [400, 401, 402, 403, 408, 413, 422, 429, 500, 502, 503, 504]
+
+libero_agent:
+  responses_api_agents:
+    ember_bridge_agent:
+      entrypoint: app.py
+      domain: agent
+      description: LIBERO SDK episodes using EmberBridge and native verification
+      num_workers: 1
+      model_server:
+        type: responses_api_models
+        name: policy_model
+      source:
+        repository: ${oc.select:libero_bridge_repository,''}
+        ref: ${oc.select:libero_bridge_ref,main}
+        cache_dir: ${oc.select:libero_bridge_cache,/scratch/ember-bridge-cache}
+        component_dir: groot/vlm/external_deps
+        python: ${oc.select:libero_bridge_python,python3.11}
+        node: ${oc.select:libero_bridge_node,node}
+      harness: ${oc.select:libero_harness,opencode}
+      harness_executable: ${oc.select:libero_harness_executable,''}
+      ttc_manifest: ${oc.select:libero_ttc_manifest,''}
+      guest_programs: ${oc.select:libero_guest_programs,''}
+      decisions_key_file: ${oc.select:libero_decisions_key_file,''}
+      output_root: ${oc.select:libero_output_root,/scratch/episodes}
+      episode_timeout_seconds: 7500
+      cleanup_timeout_seconds: 120
+      model_timeout_seconds: 900
+      bridge_config:
+        integration: libero
+        provider_auth: api_key
+        model:
+          id: ${policy_model_name}
+          profile: teacher
+          reasoning: xhigh
+          supports_max_output_tokens: true
+        episode_seconds: 1800
+        decision_limit: 100
+        request_timeout_seconds: 900
+        context_mode: standard
+        log_mode: references
+        native:
+          python: ${oc.select:libero_native_python,''}
+          root: ${oc.select:libero_native_root,''}
+          libero_config: ${oc.select:libero_native_config,''}
+          startup_seconds: 300
+        control: policy
+        policies: []
+        roles:
+          actor:
+            tools: []
+            skills: []
+            harness_options:
+              tools: native
+              evidence:
+                layout: history
+                max_images: 240
+        sdk:
+          execution: ttc
+          python: ${oc.select:libero_sdk_python,''}
+          version: '1.4'
+          call_cap: 100
+          profile:
+            vision: rgb
+      datasets:
+        - name: example
+          type: example
+          jsonl_fpath: environments/libero_sdk/data/example.jsonl
+          num_repeats: 1
+
+libero_environment:
+  environment_servers:
+    legacy_agent:
+      entrypoint: app.py
+      agent_server:
+        type: responses_api_agents
+        name: libero_agent
